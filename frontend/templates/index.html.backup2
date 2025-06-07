@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 TimefoldAI 時間割システム v2.0</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 TimefoldAI 時間割システム v2.0</h1>
+        <p class="subtitle">データ分離・カスタマイズ対応版</p>
+        
+        <div class="status-panel">
+            <h2>📊 システム状況</h2>
+            <div id="systemStatus">読み込み中...</div>
+        </div>
+        
+        <div class="data-panel">
+            <h2>📚 データ一覧</h2>
+            <div class="data-tabs">
+                <button onclick="showTab('subjects')" class="tab-button active">科目</button>
+                <button onclick="showTab('teachers')" class="tab-button">教師</button>
+                <button onclick="showTab('timeslots')" class="tab-button">時間枠</button>
+                <button onclick="showTab('lessons')" class="tab-button">授業</button>
+            </div>
+            
+            <div id="subjects" class="tab-content active">
+                <div id="subjectsList">読み込み中...</div>
+            </div>
+            
+            <div id="teachers" class="tab-content">
+                <div id="teachersList">読み込み中...</div>
+            </div>
+            
+            <div id="timeslots" class="tab-content">
+                <div id="timeslotsList">読み込み中...</div>
+            </div>
+            
+            <div id="lessons" class="tab-content">
+                <div id="lessonsList">読み込み中...</div>
+            </div>
+        </div>
+        
+        <div class="action-panel">
+            <button onclick="testOptimization()" class="btn-primary">🧠 最適化テスト</button>
+            <button onclick="openCustomizePanel()" class="btn-customize">🔧 カスタマイズ</button>
+            <button onclick="refreshData()" class="btn-secondary">🔄 データ更新</button>
+        </div>
+    </div>
+    
+    <!-- カスタマイズモーダル -->
+    <div id="customizeModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCustomizePanel()">&times;</span>
+            <h2>🔧 システムカスタマイズ</h2>
+            
+            <div class="customize-tabs">
+                <button onclick="showCustomizeTab('time-settings')" class="customize-tab-button active">⏰ 時間設定</button>
+                <button onclick="showCustomizeTab('subject-management')" class="customize-tab-button">📚 科目管理</button>
+                <button onclick="showCustomizeTab('teacher-management')" class="customize-tab-button">👨‍🏫 教師管理</button>
+                <button onclick="showCustomizeTab('preview')" class="customize-tab-button">👁️ プレビュー</button>
+            </div>
+            
+            <!-- 時間設定タブ -->
+            <div id="time-settings" class="customize-tab-content active">
+                <h3>⏰ 時間設定</h3>
+                <div class="settings-grid">
+                    <div class="setting-group">
+                        <label for="startHour">開始時刻:</label>
+                        <select id="startHour">
+                            <option value="7">7時</option>
+                            <option value="8">8時</option>
+                            <option value="9">9時</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label for="endHour">終了時刻:</label>
+                        <select id="endHour">
+                            <option value="15">15時</option>
+                            <option value="16">16時</option>
+                            <option value="17">17時</option>
+                            <option value="18">18時</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label for="lessonDuration">授業時間:</label>
+                        <select id="lessonDuration">
+                            <option value="40">40分</option>
+                            <option value="45">45分</option>
+                            <option value="50">50分</option>
+                            <option value="60">60分</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label for="breakDuration">休憩時間:</label>
+                        <select id="breakDuration">
+                            <option value="5">5分</option>
+                            <option value="10">10分</option>
+                            <option value="15">15分</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label for="schoolName">学校名:</label>
+                        <input type="text" id="schoolName" placeholder="学校名を入力">
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button onclick="previewTimeSettings()" class="btn-preview">👁️ プレビュー</button>
+                    <button onclick="saveTimeSettings()" class="btn-save">💾 保存</button>
+                </div>
+            </div>
+            
+            <!-- 科目管理タブ -->
+            <div id="subject-management" class="customize-tab-content">
+                <h3>📚 科目管理</h3>
+                
+                <div class="current-items">
+                    <h4>現在の科目</h4>
+                    <div id="currentSubjects">読み込み中...</div>
+                </div>
+                
+                <div class="add-item-form">
+                    <h4>📖 新しい科目を追加</h4>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="newSubjectName">科目名:</label>
+                            <input type="text" id="newSubjectName" placeholder="例: 情報">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="newSubjectCode">科目コード:</label>
+                            <input type="text" id="newSubjectCode" placeholder="例: INFO">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="subjectCategory">カテゴリ:</label>
+                            <select id="subjectCategory">
+                                <option value="general">一般</option>
+                                <option value="language">語学</option>
+                                <option value="science">理科</option>
+                                <option value="social">社会</option>
+                                <option value="arts">芸術</option>
+                                <option value="sports">体育</option>
+                                <option value="technology">技術</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="weeklyHours">週間授業数:</label>
+                            <select id="weeklyHours">
+                                <option value="1">1時間</option>
+                                <option value="2">2時間</option>
+                                <option value="3">3時間</option>
+                                <option value="4">4時間</option>
+                                <option value="5">5時間</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label for="subjectDescription">説明:</label>
+                            <input type="text" id="subjectDescription" placeholder="科目の説明">
+                        </div>
+                    </div>
+                    
+                    <button onclick="addSubject()" class="btn-add">➕ 科目追加</button>
+                </div>
+            </div>
+            
+            <!-- 教師管理タブ -->
+            <div id="teacher-management" class="customize-tab-content">
+                <h3>👨‍🏫 教師管理</h3>
+                
+                <div class="current-items">
+                    <h4>現在の教師</h4>
+                    <div id="currentTeachers">読み込み中...</div>
+                </div>
+                
+                <div class="add-item-form">
+                    <h4>👨‍🏫 新しい教師を追加</h4>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="newTeacherName">教師名:</label>
+                            <input type="text" id="newTeacherName" placeholder="例: 田中先生">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="newTeacherEmail">メールアドレス:</label>
+                            <input type="email" id="newTeacherEmail" placeholder="例: tanaka@school.jp">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="teacherSubjects">担当科目:</label>
+                            <input type="text" id="teacherSubjects" placeholder="例: 数学,理科 (カンマ区切り)">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="employmentType">雇用形態:</label>
+                            <select id="employmentType">
+                                <option value="full_time">常勤</option>
+                                <option value="part_time">非常勤</option>
+                                <option value="substitute">代替教員</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="teacherMaxLessons">1日最大授業数:</label>
+                            <select id="teacherMaxLessons">
+                                <option value="4">4コマ</option>
+                                <option value="5">5コマ</option>
+                                <option value="6">6コマ</option>
+                                <option value="7">7コマ</option>
+                                <option value="8">8コマ</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button onclick="addTeacher()" class="btn-add">➕ 教師追加</button>
+                </div>
+            </div>
+            
+            <!-- プレビュータブ -->
+            <div id="preview" class="customize-tab-content">
+                <h3>👁️ 設定プレビュー</h3>
+                <div id="previewContent">
+                    <p>時間設定を変更して「プレビュー」ボタンを押すと、新しい時間割構成が表示されます。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/customize.js') }}"></script>
+</body>
+</html>

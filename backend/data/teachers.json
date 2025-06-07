@@ -1,0 +1,141 @@
+[
+  {
+    "id": 1,
+    "name": "田中先生",
+    "email": "tanaka@school.jp",
+    "subjects": [
+      "数学"
+    ],
+    "max_daily_lessons": 6,
+    "max_weekly_hours": 30,
+    "available_days": [
+      "MONDAY",
+      "TUESDAY",
+      "WEDNESDAY",
+      "THURSDAY",
+      "FRIDAY"
+    ],
+    "available_hours": [],
+    "preferred_times": [
+      "09:00-12:00"
+    ],
+    "unavailable_times": [],
+    "employment_type": "full_time",
+    "created_at": "2025-05-28T10:50:16.698056"
+  },
+  {
+    "id": 2,
+    "name": "鈴木先生",
+    "email": "suzuki@school.jp",
+    "subjects": [
+      "英語"
+    ],
+    "max_daily_lessons": 5,
+    "max_weekly_hours": 25,
+    "available_days": [
+      "MONDAY",
+      "TUESDAY",
+      "WEDNESDAY",
+      "THURSDAY"
+    ],
+    "available_hours": [
+      "09:00-15:00"
+    ],
+    "preferred_times": [
+      "10:00-14:00"
+    ],
+    "unavailable_times": [
+      "15:00-16:00"
+    ],
+    "employment_type": "part_time",
+    "created_at": "2025-05-28T10:50:16.698058"
+  },
+  {
+    "id": 7,
+    "name": "風間先生",
+    "email": "",
+    "subjects": [
+      "理科"
+    ],
+    "max_daily_lessons": 8,
+    "max_weekly_hours": 30,
+    "available_days": [
+      "MONDAY",
+      "TUESDAY",
+      "WEDNESDAY",
+      "THURSDAY",
+      "FRIDAY"
+    ],
+    "available_hours": [],
+    "preferred_times": [],
+    "unavailable_times": [],
+    "employment_type": "full_time",
+    "created_at": "2025-05-29T20:31:52.502201"
+  },
+  {
+    "id": 8,
+    "name": "保坂先生",
+    "email": "",
+    "subjects": [
+      "日本史"
+    ],
+    "max_daily_lessons": 8,
+    "max_weekly_hours": 30,
+    "available_days": [
+      "MONDAY",
+      "TUESDAY",
+      "WEDNESDAY",
+      "THURSDAY",
+      "FRIDAY"
+    ],
+    "available_hours": [],
+    "preferred_times": [],
+    "unavailable_times": [],
+    "employment_type": "full_time",
+    "created_at": "2025-05-29T20:33:33.885792"
+  },
+  {
+    "id": 9,
+    "name": "佐藤先生",
+    "email": "",
+    "subjects": [
+      "国語"
+    ],
+    "max_daily_lessons": 8,
+    "max_weekly_hours": 30,
+    "available_days": [
+      "MONDAY",
+      "TUESDAY",
+      "WEDNESDAY",
+      "THURSDAY",
+      "FRIDAY"
+    ],
+    "available_hours": [],
+    "preferred_times": [],
+    "unavailable_times": [],
+    "employment_type": "full_time",
+    "created_at": "2025-05-29T20:34:05.592354"
+  },
+  {
+    "id": 10,
+    "name": "小林先生",
+    "email": "",
+    "subjects": [
+      "西洋史"
+    ],
+    "max_daily_lessons": 4,
+    "max_weekly_hours": 30,
+    "available_days": [
+      "MONDAY",
+      "TUESDAY",
+      "WEDNESDAY",
+      "THURSDAY",
+      "FRIDAY"
+    ],
+    "available_hours": [],
+    "preferred_times": [],
+    "unavailable_times": [],
+    "employment_type": "full_time",
+    "created_at": "2025-05-29T22:40:57.831015"
+  }
+]

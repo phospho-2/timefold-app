@@ -1,0 +1,96 @@
+"""API ルート定義"""
+from flask import Blueprint, request, jsonify
+from ..models.database import JSONDataRepository
+from ..models.data_models import Subject, Teacher
+
+# Blueprint の作成
+api_bp = Blueprint('api', __name__, url_prefix='/api')
+
+# グローバルなデータリポジトリ（シングルトン）
+_data_repo = None
+
+def get_data_repository():
+    """データリポジトリのシングルトン取得"""
+    global _data_repo
+    if _data_repo is None:
+        _data_repo = JSONDataRepository("backend/data")
+    else:
+        # 最新データを再読み込み
+        _data_repo.load_all_data()
+    return _data_repo
+
+@api_bp.route('/subjects', methods=['GET', 'POST'])
+def manage_subjects():
+    """科目管理API"""
+    data_repo = get_data_repository()
+    
+    if request.method == 'GET':
+        subjects = data_repo.get_subjects()
+        print(f"📚 /api/subjects GET: {len(subjects)}件の科目を返します")
+        return jsonify([s.to_dict() for s in subjects])
+    
+    elif request.method == 'POST':
+        try:
+            subject_data = request.get_json()
+            subject = Subject(**subject_data)
+            saved_subject = data_repo.save_subject(subject)
+            print(f"📚 /api/subjects POST: 科目'{subject.name}'を保存しました")
+            return jsonify(saved_subject.to_dict())
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
+
+@api_bp.route('/teachers', methods=['GET', 'POST'])
+def manage_teachers():
+    """教師管理API"""
+    data_repo = get_data_repository()
+    
+    if request.method == 'GET':
+        teachers = data_repo.get_teachers()
+        print(f"👨‍🏫 /api/teachers GET: {len(teachers)}件の教師を返します")
+        return jsonify([t.to_dict() for t in teachers])
+    
+    elif request.method == 'POST':
+        try:
+            teacher_data = request.get_json()
+            teacher = Teacher(**teacher_data)
+            saved_teacher = data_repo.save_teacher(teacher)
+            print(f"👨‍🏫 /api/teachers POST: 教師'{teacher.name}'を保存しました")
+            return jsonify(saved_teacher.to_dict())
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
+
+@api_bp.route('/timeslots', methods=['GET'])
+def get_timeslots():
+    """時間枠取得API"""
+    data_repo = get_data_repository()
+    timeslots = data_repo.get_timeslots()
+    return jsonify([t.to_dict() for t in timeslots])
+
+@api_bp.route('/student-groups', methods=['GET'])
+def get_student_groups():
+    """学生グループ取得API"""
+    data_repo = get_data_repository()
+    student_groups = data_repo.get_student_groups()
+    return jsonify([sg.to_dict() for sg in student_groups])
+
+@api_bp.route('/lessons', methods=['GET'])
+def manage_lessons():
+    """授業管理API"""
+    data_repo = get_data_repository()
+    lessons = data_repo.generate_lessons()
+    return jsonify([l.to_dict() for l in lessons])
+
+@api_bp.route('/test', methods=['GET'])
+def test_api():
+    """API動作テスト"""
+    data_repo = get_data_repository()
+    return jsonify({
+        "status": "success",
+        "message": "TimefoldAI API is working!",
+        "data_summary": {
+            "subjects": len(data_repo.get_subjects()),
+            "teachers": len(data_repo.get_teachers()),
+            "timeslots": len(data_repo.get_timeslots()),
+            "student_groups": len(data_repo.get_student_groups())
+        }
+    })

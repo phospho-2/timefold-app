@@ -1,0 +1,68 @@
+[
+  {
+    "id": 1,
+    "name": "数学",
+    "code": "MATH",
+    "description": "数学の授業",
+    "required_equipment": [],
+    "difficulty_level": "hard",
+    "category": "science",
+    "weekly_hours": 5,
+    "created_at": "2025-05-28T10:50:16.698049"
+  },
+  {
+    "id": 2,
+    "name": "国語",
+    "code": "JPN",
+    "description": "国語の授業",
+    "required_equipment": [],
+    "difficulty_level": "medium",
+    "category": "language",
+    "weekly_hours": 4,
+    "created_at": "2025-05-28T10:50:16.698054"
+  },
+  {
+    "id": 4,
+    "name": "理科",
+    "code": "science",
+    "description": "理科の授業",
+    "required_equipment": [],
+    "difficulty_level": "medium",
+    "category": "science",
+    "weekly_hours": 3,
+    "created_at": "2025-05-28T13:24:23.963204"
+  },
+  {
+    "id": 5,
+    "name": "英語",
+    "code": "english",
+    "description": "英語の授業",
+    "required_equipment": [],
+    "difficulty_level": "medium",
+    "category": "language",
+    "weekly_hours": 3,
+    "created_at": "2025-05-28T13:35:58.879056"
+  },
+  {
+    "id": 8,
+    "name": "日本史",
+    "code": "japanese_history",
+    "description": "日本史の授業",
+    "required_equipment": [],
+    "difficulty_level": "medium",
+    "category": "social",
+    "weekly_hours": 4,
+    "created_at": "2025-05-29T18:28:26.163831"
+  },
+  {
+    "id": 9,
+    "name": "西洋史",
+    "code": "europian_history",
+    "description": "西洋史の授業",
+    "required_equipment": [],
+    "difficulty_level": "medium",
+    "category": "social",
+    "weekly_hours": 3,
+    "created_at": "2025-05-29T22:40:35.397778"
+  }
+]

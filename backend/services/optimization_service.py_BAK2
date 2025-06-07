@@ -1,0 +1,199 @@
+from datetime import time
+from typing import List, Dict, Any
+import json
+
+from timefold.solver import SolverFactory
+from timefold.solver.config import SolverConfig, TerminationConfig, ScoreDirectorFactoryConfig, Duration
+
+from backend.models.timefold_models import (
+    TimeTable, Lesson, Timeslot, Room, Subject, Teacher, StudentGroup, define_constraints
+)
+from backend.models.database import JSONDataRepository
+
+class OptimizationService:
+    def __init__(self):
+        self.db = JSONDataRepository()
+        
+    def generate_demo_data(self) -> TimeTable:
+        """デモ用の基本データを生成"""
+        timeslots = [
+            Timeslot(1, "月曜日", time(8, 50), time(9, 40)),
+            Timeslot(2, "月曜日", time(9, 50), time(10, 40)),
+            Timeslot(3, "月曜日", time(10, 50), time(11, 40)),
+            Timeslot(4, "月曜日", time(13, 30), time(14, 20)),
+            Timeslot(5, "火曜日", time(8, 50), time(9, 40)),
+            Timeslot(6, "火曜日", time(9, 50), time(10, 40)),
+            Timeslot(7, "火曜日", time(10, 50), time(11, 40)),
+            Timeslot(8, "火曜日", time(13, 30), time(14, 20)),
+            Timeslot(9, "水曜日", time(8, 50), time(9, 40)),
+            Timeslot(10, "水曜日", time(9, 50), time(10, 40)),
+            Timeslot(11, "木曜日", time(8, 50), time(9, 40)),
+            Timeslot(12, "木曜日", time(9, 50), time(10, 40)),
+            Timeslot(13, "金曜日", time(8, 50), time(9, 40)),
+            Timeslot(14, "金曜日", time(9, 50), time(10, 40)),
+        ]
+        
+        rooms = [
+            Room(1, "教室A"),
+            Room(2, "教室B"), 
+            Room(3, "理科室"),
+            Room(4, "音楽室"),
+            Room(5, "図書室"),
+        ]
+        
+        # データベースから実際の教師と科目を取得
+        teachers_data = [t.to_dict() for t in self.db.get_teachers()]
+        subjects_data = [s.to_dict() for s in self.db.get_subjects()]
+        
+        # TimefoldAI用のオブジェクトに変換
+        teachers = [Teacher(t['id'], t['name']) for t in teachers_data]
+        subjects = [Subject(s['id'], s['name']) for s in subjects_data]
+        
+        # 学生グループ（クラス）の定義
+        student_groups = [
+            StudentGroup(1, "1年A組"),
+            StudentGroup(2, "1年B組"),
+            StudentGroup(3, "2年A組"),
+            StudentGroup(4, "2年B組"),
+        ]
+        
+        # 授業を動的に生成（教師と科目の組み合わせ）
+        lessons = []
+        lesson_id = 1
+        
+        for student_group in student_groups:
+            # 各クラスに対して各科目の授業を作成
+            for subject in subjects:
+                # その科目を教えられる教師を見つける
+                suitable_teachers = []
+                for teacher in teachers:
+                    teacher_data = next((t for t in teachers_data if t['id'] == teacher.id), None)
+                    if teacher_data and subject.name in teacher_data.get('subjects', []):
+                        suitable_teachers.append(teacher)
+                
+                # 適切な教師がいれば授業を作成
+                if suitable_teachers:
+                    teacher = suitable_teachers[0]  # 最初の適切な教師を選択
+                    lesson = Lesson(lesson_id, subject, teacher, student_group)
+                    lessons.append(lesson)
+                    lesson_id += 1
+        
+        print(f"🎯 最適化データ生成完了:")
+        print(f"   📚 科目数: {len(subjects)}")
+        print(f"   👨‍🏫 教師数: {len(teachers)}")  
+        print(f"   👥 クラス数: {len(student_groups)}")
+        print(f"   📝 授業数: {len(lessons)}")
+        print(f"   🕒 時間帯数: {len(timeslots)}")
+        print(f"   🏫 教室数: {len(rooms)}")
+        
+        return TimeTable(timeslots=timeslots, rooms=rooms, lessons=lessons)
+    
+    def convert_to_json(self, timetable: TimeTable) -> Dict[str, Any]:
+        """TimefoldAIオブジェクトをJSON形式に変換"""
+        return {
+            "timeslots": [
+                {
+                    "id": t.id, 
+                    "day_of_week": t.day_of_week, 
+                    "start_time": t.start_time.strftime("%H:%M"), 
+                    "end_time": t.end_time.strftime("%H:%M")
+                } for t in timetable.timeslots
+            ],
+            "rooms": [
+                {"id": r.id, "name": r.name} for r in timetable.rooms
+            ],
+            "lessons": [
+                {
+                    "id": l.id, 
+                    "subject": {"id": l.subject.id, "name": l.subject.name},
+                    "teacher": {"id": l.teacher.id, "name": l.teacher.name},
+                    "student_group": {"id": l.student_group.id, "name": l.student_group.name},
+                    "timeslot": {
+                        "id": l.timeslot.id, 
+                        "day_of_week": l.timeslot.day_of_week,
+                        "start_time": l.timeslot.start_time.strftime("%H:%M"),
+                        "end_time": l.timeslot.end_time.strftime("%H:%M")
+                    } if l.timeslot else None,
+                    "room": {"id": l.room.id, "name": l.room.name} if l.room else None
+                } for l in timetable.lessons
+            ],
+            "score": str(timetable.score) if timetable.score else "Perfect"
+        }
+    
+    def convert_from_json(self, data: Dict[str, Any]) -> TimeTable:
+        """JSON形式のデータをTimefoldAIオブジェクトに変換"""
+        # Timeslotsの変換
+        timeslots = [
+            Timeslot(
+                t["id"], 
+                t["day_of_week"], 
+                time.fromisoformat(t["start_time"]), 
+                time.fromisoformat(t["end_time"])
+            ) for t in data["timeslots"]
+        ]
+        
+        # Roomsの変換
+        rooms = [Room(r["id"], r["name"]) for r in data["rooms"]]
+        
+        # Lessonsの変換
+        lessons = []
+        for l in data["lessons"]:
+            subject = Subject(l["subject"]["id"], l["subject"]["name"])
+            teacher = Teacher(l["teacher"]["id"], l["teacher"]["name"])
+            student_group = StudentGroup(l["student_group"]["id"], l["student_group"]["name"])
+            
+            lesson = Lesson(l["id"], subject, teacher, student_group)
+            
+            # timeslotとroomが割り当てられている場合
+            if l.get("timeslot"):
+                lesson.timeslot = next(
+                    (ts for ts in timeslots if ts.id == l["timeslot"]["id"]), None
+                )
+            if l.get("room"):
+                lesson.room = next(
+                    (r for r in rooms if r.id == l["room"]["id"]), None
+                )
+            
+            lessons.append(lesson)
+        
+        return TimeTable(timeslots=timeslots, rooms=rooms, lessons=lessons)
+    
+    def optimize_timetable(self, timetable: TimeTable) -> TimeTable:
+        """🎯 本格版 Timefold AI v6 で時間割を最適化"""
+        try:
+            print("🎯 Starting Real Timefold AI v6 optimization...")
+            print("🔧 Configuring Real Timefold Solver v6...")
+            print("🧠 Meta-heuristic algorithms: Tabu Search, Simulated Annealing, Hill Climbing")
+            print("⚖️ Hard/Soft constraint multi-objective optimization")
+            
+            # 🚀 本格版 Timefold Solver設定
+            solver_config = SolverConfig(
+                solution_class=TimeTable,
+                entity_class_list=[Lesson],
+                score_director_factory_config=ScoreDirectorFactoryConfig(
+                    constraint_provider_function=define_constraints
+                ),
+                termination_config=TerminationConfig(
+                    spent_limit=Duration(seconds=30)  # 30秒で本格最適化
+                )
+            )
+            
+            print("🚀 Executing Real Timefold AI v6...")
+            
+            # 🎯 本物のTimefold Solver実行
+            solver = SolverFactory.create(solver_config).build_solver()
+            solution = solver.solve(timetable)
+            
+            print(f"🎉 Real AI Optimization completed! Score: {solution.score}")
+            
+            # 制約違反の詳細分析
+            assigned_lessons = [l for l in solution.lessons if l.timeslot and l.room]
+            print(f"📊 Assigned: {len(assigned_lessons)}/{len(solution.lessons)} lessons")
+            
+            return solution
+            
+        except Exception as e:
+            print(f"❌ Optimization Error: {e}")
+            import traceback
+            traceback.print_exc()
+            raise e

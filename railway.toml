@@ -1,0 +1,14 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "python run.py"
+healthcheckPath = "/api/test"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+
+[[services]]
+name = "timefold-app"
+
+[services.variables]
+PORT = "8000"

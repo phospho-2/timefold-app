@@ -1,0 +1,24 @@
+{
+  "start_hour": 7,
+  "end_hour": 18,
+  "lesson_duration": 60,
+  "break_duration": 15,
+  "lunch_break_start": "12:00",
+  "lunch_break_end": "13:00",
+  "max_daily_lessons_per_teacher": 6,
+  "max_consecutive_lessons": 3,
+  "min_break_between_lessons": 10,
+  "preferred_morning_subjects": [
+    "数学",
+    "国語",
+    "英語"
+  ],
+  "preferred_afternoon_subjects": [
+    "体育",
+    "音楽",
+    "美術"
+  ],
+  "school_name": "サンプル学校",
+  "academic_year": "2025",
+  "semester": "1学期"
+}

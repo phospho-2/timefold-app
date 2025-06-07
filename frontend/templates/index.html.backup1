@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 TimefoldAI 時間割システム v2.0</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 TimefoldAI 時間割システム v2.0</h1>
+        <p class="subtitle">データ分離完了版</p>
+        
+        <div class="status-panel">
+            <h2>📊 システム状況</h2>
+            <div id="systemStatus">読み込み中...</div>
+        </div>
+        
+        <div class="data-panel">
+            <h2>📚 データ一覧</h2>
+            <div class="data-tabs">
+                <button onclick="showTab('subjects')" class="tab-button active">科目</button>
+                <button onclick="showTab('teachers')" class="tab-button">教師</button>
+                <button onclick="showTab('timeslots')" class="tab-button">時間枠</button>
+                <button onclick="showTab('lessons')" class="tab-button">授業</button>
+            </div>
+            
+            <div id="subjects" class="tab-content active">
+                <div id="subjectsList">読み込み中...</div>
+            </div>
+            
+            <div id="teachers" class="tab-content">
+                <div id="teachersList">読み込み中...</div>
+            </div>
+            
+            <div id="timeslots" class="tab-content">
+                <div id="timeslotsList">読み込み中...</div>
+            </div>
+            
+            <div id="lessons" class="tab-content">
+                <div id="lessonsList">読み込み中...</div>
+            </div>
+        </div>
+        
+        <div class="action-panel">
+            <button onclick="testOptimization()" class="btn-primary">🧠 最適化テスト</button>
+            <button onclick="refreshData()" class="btn-secondary">🔄 データ更新</button>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
