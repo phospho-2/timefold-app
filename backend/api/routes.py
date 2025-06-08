@@ -1,193 +1,95 @@
-"""API ルート定義"""
 from flask import Blueprint, request, jsonify
-from ..models.database import JSONDataRepository
-from ..models.data_models import Subject, Teacher
-from backend.services.optimization_service import OptimizationService
+import logging
+import threading
+import time
 
-# Blueprint の作成（最初に定義）
-api_bp = Blueprint('api', __name__, url_prefix='/api')
+api_bp = Blueprint('api', __name__)
+logger = logging.getLogger(__name__)
 
-# 最適化サービスのインスタンス化
-optimization_service = OptimizationService()
-
-# グローバルなデータリポジトリ（シングルトン）
-_data_repo = None
-
-def get_data_repository():
-    """データリポジトリのシングルトン取得"""
-    global _data_repo
-    if _data_repo is None:
-        _data_repo = JSONDataRepository("backend/data")
-    else:
-        # 最新データを再読み込み
-        _data_repo.load_all_data()
-    return _data_repo
-
-# 最適化関連のエンドポイント
-@api_bp.route('/demo-data', methods=['GET'])
-def get_demo_data():
-    """デモデータを返す（最新データで生成）"""
-    try:
-        print("🎯 デモデータ生成中...")
-        # 🔧 重要: 新しいインスタンスを作成して最新データを取得
-        fresh_optimization_service = OptimizationService()
-        timetable = fresh_optimization_service.generate_demo_data()
-        result = fresh_optimization_service.convert_to_json(timetable)
-        print("✅ デモデータ生成完了")
-        return jsonify(result)
-    except Exception as e:
-        print(f"❌ デモデータ生成エラー: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+# 最適化状態管理
+optimization_status = {
+    "running": False,
+    "result": None,
+    "error": None,
+    "progress": 0
+}
 
 @api_bp.route('/optimize', methods=['POST'])
-def optimize_timetable():
-    """🎯 本格版 Timefold AI v6 で時間割を最適化（最新データ使用）"""
+def optimize():
+    """最適化を非同期で実行"""
+    global optimization_status
+    
     try:
-        print("🎯 最適化リクエスト受信")
+        if optimization_status["running"]:
+            return jsonify({
+                "success": False,
+                "message": "最適化が既に実行中です",
+                "status": "running"
+            }), 400
         
-        # 🔧 重要: 新しいインスタンスを作成して最新データを取得
-        fresh_optimization_service = OptimizationService()
-        
+        # リクエストデータを取得
         data = request.get_json()
-        if not data:
-            # データが送信されていない場合は最新デモデータを使用
-            print("📚 最新デモデータを使用して最適化実行")
-            timetable = fresh_optimization_service.generate_demo_data()
-        else:
-            # 送信されたデータを使用
-            print("📊 送信データを使用して最適化実行")
-            timetable = fresh_optimization_service.convert_from_json(data)
         
-        # 最適化実行
-        solution = fresh_optimization_service.optimize_timetable(timetable)
+        # 最適化状態をリセット
+        optimization_status = {
+            "running": True,
+            "result": None,
+            "error": None,
+            "progress": 0
+        }
         
-        # 結果をJSON形式で返す
-        result = fresh_optimization_service.convert_to_json(solution)
+        # 非同期で最適化を実行
+        def run_optimization():
+            try:
+                from backend.services.optimization_service import OptimizationService
+                service = OptimizationService()
+                
+                logger.info("🚀 最適化処理開始（非同期）")
+                optimization_status["progress"] = 10
+                
+                result = service.optimize_timetable(data)
+                
+                optimization_status["running"] = False
+                optimization_status["result"] = result
+                optimization_status["progress"] = 100
+                
+                logger.info("✅ 最適化処理完了（非同期）")
+                
+            except Exception as e:
+                logger.error(f"❌ 最適化エラー（非同期）: {str(e)}")
+                optimization_status["running"] = False
+                optimization_status["error"] = str(e)
+                optimization_status["progress"] = 0
         
-        print("🎉 最適化完了 - 結果を返送")
-        return jsonify(result)
-        
-    except Exception as e:
-        print(f"❌ 最適化エラー: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
-
-@api_bp.route('/refresh-cache', methods=['POST'])
-def refresh_cache():
-    """キャッシュを強制更新（新規追加）"""
-    try:
-        # グローバルな最適化サービスを再作成
-        global optimization_service
-        optimization_service = OptimizationService()
+        # バックグラウンドで実行
+        thread = threading.Thread(target=run_optimization)
+        thread.daemon = True
+        thread.start()
         
         return jsonify({
-            "status": "success",
-            "message": "キャッシュを更新しました"
+            "success": True,
+            "message": "最適化処理を開始しました",
+            "status": "started"
         })
+        
     except Exception as e:
+        logger.error(f"❌ 最適化開始エラー: {str(e)}")
+        optimization_status["running"] = False
+        optimization_status["error"] = str(e)
+        
         return jsonify({
-            "status": "error",
-            "message": f"キャッシュ更新エラー: {e}"
+            "success": False,
+            "error": f"最適化の開始に失敗しました: {str(e)}"
         }), 500
 
 @api_bp.route('/optimization-status', methods=['GET'])
 def get_optimization_status():
-    """最適化機能の状態確認"""
-    try:
-        # TimefoldAIの動作確認
-        from timefold.solver import SolverFactory
-        return jsonify({
-            "status": "ready",
-            "message": "TimefoldAI最適化エンジン準備完了",
-            "version": "TimefoldAI v6 本格版"
-        })
-    except ImportError as e:
-        return jsonify({
-            "status": "error", 
-            "message": f"TimefoldAI未インストール: {e}"
-        }), 500
-    except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": f"最適化エンジンエラー: {e}"
-        }), 500
-
-# 既存のエンドポイント
-@api_bp.route('/subjects', methods=['GET', 'POST'])
-def manage_subjects():
-    """科目管理API"""
-    data_repo = get_data_repository()
+    """最適化の状態を取得"""
+    global optimization_status
     
-    if request.method == 'GET':
-        subjects = data_repo.get_subjects()
-        print(f"📚 /api/subjects GET: {len(subjects)}件の科目を返します")
-        return jsonify([s.to_dict() for s in subjects])
-    
-    elif request.method == 'POST':
-        try:
-            subject_data = request.get_json()
-            subject = Subject(**subject_data)
-            saved_subject = data_repo.save_subject(subject)
-            print(f"📚 /api/subjects POST: 科目'{subject.name}'を保存しました")
-            return jsonify(saved_subject.to_dict())
-        except Exception as e:
-            return jsonify({"error": str(e)}), 400
-
-@api_bp.route('/teachers', methods=['GET', 'POST'])
-def manage_teachers():
-    """教師管理API"""
-    data_repo = get_data_repository()
-    
-    if request.method == 'GET':
-        teachers = data_repo.get_teachers()
-        print(f"👨‍🏫 /api/teachers GET: {len(teachers)}件の教師を返します")
-        return jsonify([t.to_dict() for t in teachers])
-    
-    elif request.method == 'POST':
-        try:
-            teacher_data = request.get_json()
-            teacher = Teacher(**teacher_data)
-            saved_teacher = data_repo.save_teacher(teacher)
-            print(f"👨‍🏫 /api/teachers POST: 教師'{teacher.name}'を保存しました")
-            return jsonify(saved_teacher.to_dict())
-        except Exception as e:
-            return jsonify({"error": str(e)}), 400
-
-@api_bp.route('/timeslots', methods=['GET'])
-def get_timeslots():
-    """時間枠取得API"""
-    data_repo = get_data_repository()
-    timeslots = data_repo.get_timeslots()
-    return jsonify([t.to_dict() for t in timeslots])
-
-@api_bp.route('/student-groups', methods=['GET'])
-def get_student_groups():
-    """学生グループ取得API"""
-    data_repo = get_data_repository()
-    student_groups = data_repo.get_student_groups()
-    return jsonify([sg.to_dict() for sg in student_groups])
-
-@api_bp.route('/lessons', methods=['GET'])
-def manage_lessons():
-    """授業管理API"""
-    data_repo = get_data_repository()
-    lessons = data_repo.generate_lessons()
-    return jsonify([l.to_dict() for l in lessons])
-
-@api_bp.route('/test', methods=['GET'])
-def test_api():
-    """API動作テスト"""
-    data_repo = get_data_repository()
     return jsonify({
-        "status": "success",
-        "message": "TimefoldAI API is working!",
-        "data_summary": {
-            "subjects": len(data_repo.get_subjects()),
-            "teachers": len(data_repo.get_teachers()),
-            "timeslots": len(data_repo.get_timeslots()),
-            "student_groups": len(data_repo.get_student_groups())
-        }
+        "running": optimization_status["running"],
+        "progress": optimization_status["progress"],
+        "result": optimization_status["result"],
+        "error": optimization_status["error"]
     })

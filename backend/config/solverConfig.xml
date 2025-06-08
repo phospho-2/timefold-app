@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<solver xmlns="https://timefold.ai/xsd/solver" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd">
+
+  <solutionClass>backend.models.timefold_models.TimetableSolution</solutionClass>
+  <entityClass>backend.models.timefold_models.Lesson</entityClass>
+
+  <scoreDirectorFactory>
+    <constraintProviderClass>backend.models.constraints.TimetableConstraintProvider</constraintProviderClass>
+  </scoreDirectorFactory>
+
+  <!-- Railway環境用の軽量設定 -->
+  <termination>
+    <!-- 最大10秒で終了（Railway環境用） -->
+    <secondsSpentLimit>10</secondsSpentLimit>
+    <!-- または、良いスコアが見つかったら早期終了 -->
+    <bestScoreLimit>0hard/0soft</bestScoreLimit>
+  </termination>
+
+  <constructionHeuristic>
+    <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+  </constructionHeuristic>
+
+  <!-- 軽量な局所探索のみ -->
+  <localSearch>
+    <termination>
+      <secondsSpentLimit>5</secondsSpentLimit>
+    </termination>
+    <moveSelector>
+      <changeMoveSelector/>
+    </moveSelector>
+    <acceptor>
+      <lateAcceptanceSize>200</lateAcceptanceSize>
+    </acceptor>
+    <forager>
+      <acceptedCountLimit>1</acceptedCountLimit>
+    </forager>
+  </localSearch>
+
+</solver>
