@@ -14,6 +14,34 @@ optimization_status = {
     "progress": 0
 }
 
+@api_bp.route('/test', methods=['GET'])
+def test_api():
+    """APIテスト用エンドポイント（Railway ヘルスチェック用）"""
+    return jsonify({
+        "status": "ok",
+        "message": "TimefoldAI API is running",
+        "timestamp": time.time()
+    })
+
+@api_bp.route('/demo-data', methods=['GET'])
+def get_demo_data():
+    """デモデータを取得"""
+    try:
+        from backend.services.data_service import DataService
+        data_service = DataService()
+        demo_data = data_service.get_demo_data()
+        
+        return jsonify({
+            "success": True,
+            "data": demo_data
+        })
+    except Exception as e:
+        logger.error(f"❌ デモデータ取得エラー: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": f"デモデータの取得に失敗しました: {str(e)}"
+        }), 500
+
 @api_bp.route('/optimize', methods=['POST'])
 def optimize():
     """最適化を非同期で実行"""
