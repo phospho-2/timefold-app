@@ -1,2 +1,7 @@
 Flask==2.3.3
-timefold==1.13.0
+timefold==1.22.1b0
+Werkzeug==2.3.7
+Jinja2==3.1.2
+click==8.1.7
+itsdangerous==2.1.2
+MarkupSafe==2.1.3
