@@ -24,7 +24,7 @@ def create_app(config=None):
         })
     
     # Blueprint登録
-    app.register_blueprint(api_bp)
+    app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(customize_bp)  # カスタマイズAPI追加
     
     @app.route('/')

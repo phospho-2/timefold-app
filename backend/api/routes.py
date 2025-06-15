@@ -5,7 +5,7 @@ from ..models.data_models import Subject, Teacher
 from backend.services.optimization_service import OptimizationService
 
 # Blueprint の作成（最初に定義）
-api_bp = Blueprint('api', __name__, url_prefix='/api')
+api_bp = Blueprint('api', __name__)
 
 # 最適化サービスのインスタンス化
 optimization_service = OptimizationService()
