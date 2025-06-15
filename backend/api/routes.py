@@ -85,9 +85,22 @@ def railway_optimization():
         print(f"🌍 環境変数確認: RAILWAY_ENVIRONMENT={os.environ.get('RAILWAY_ENVIRONMENT', 'None')}")
         print(f"🌍 環境変数確認: RAILWAY_PROJECT_ID={os.environ.get('RAILWAY_PROJECT_ID', 'None')}")
         
-        # 実際のカスタマイズデータを取得
-        data_repo = get_data_repository()
-        print("📋 データリポジトリ取得完了")
+        # テスト: Railway optimization 関数が呼び出されているか確認
+        return jsonify({
+            "timeslots": [{"id": 1, "day_of_week": "TEST", "start_time": "09:00", "end_time": "10:00"}],
+            "rooms": [{"id": 1, "name": "TEST教室"}],
+            "lessons": [{"id": 1, "subject": {"name": "TEST"}, "teacher": {"name": "TEST先生"}}],
+            "score": "Railway最適化関数テスト実行中"
+        })
+        
+        # より安全なデータ取得アプローチ
+        try:
+            # 実際のカスタマイズデータを取得
+            data_repo = get_data_repository()
+            print("📋 データリポジトリ取得完了")
+        except Exception as repo_error:
+            print(f"❌ データリポジトリ取得エラー: {repo_error}")
+            raise repo_error
         
         subjects = data_repo.get_subjects()
         print(f"📚 科目データ取得: {len(subjects)}件")
