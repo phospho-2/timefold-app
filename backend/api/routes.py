@@ -148,6 +148,9 @@ def railway_optimization():
                 for teacher in suitable_teachers[:1]:  # 最初の適任教師
                     teacher_dict = teacher.to_dict()
                     print(f"    選択教師: {teacher_dict.get('name', 'N/A')} - 担当科目: {teacher_dict.get('subjects', [])}")
+            else:
+                print(f"  ⚠️ 科目'{subject_name}'に適任教師が見つかりません")
+                print(f"    利用可能な教師: {[t.to_dict().get('name') + ':' + str(t.to_dict().get('subjects', [])) for t in teachers[:3]]}")
             
             if suitable_teachers and student_groups:
                 teacher = suitable_teachers[0]
