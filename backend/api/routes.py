@@ -49,7 +49,7 @@ def optimize_timetable():
         print("🎯 最適化リクエスト受信")
         
         # Railway環境検出
-        is_railway = 'RAILWAY_ENVIRONMENT' in os.environ
+        is_railway = 'RAILWAY_ENVIRONMENT' in os.environ or 'RAILWAY_PROJECT_ID' in os.environ
         
         if is_railway:
             # Railway環境では実用的軽量最適化を実行
@@ -82,6 +82,8 @@ def railway_optimization():
     """Railway環境での実用的最適化（カスタマイズデータ反映）"""
     try:
         print("🔧 Railway最適化: カスタマイズデータ読み込み中...")
+        print(f"🌍 環境変数確認: RAILWAY_ENVIRONMENT={os.environ.get('RAILWAY_ENVIRONMENT', 'None')}")
+        print(f"🌍 環境変数確認: RAILWAY_PROJECT_ID={os.environ.get('RAILWAY_PROJECT_ID', 'None')}")
         
         # 実際のカスタマイズデータを取得
         data_repo = get_data_repository()
