@@ -44,7 +44,7 @@ def get_demo_data():
 
 @api_bp.route('/optimize', methods=['POST'])
 def optimize_timetable():
-    """🎯 Railway対応 軽量最適化エンドポイント"""
+    """🎯 Railway対応 実用的最適化エンドポイント"""
     try:
         print("🎯 最適化リクエスト受信")
         
@@ -52,39 +52,9 @@ def optimize_timetable():
         is_railway = 'RAILWAY_ENVIRONMENT' in os.environ
         
         if is_railway:
-            # Railway環境では軽量版デモデータを返す
-            print("🚂 Railway環境: 軽量デモデータを返送")
-            return jsonify({
-                "timeslots": [
-                    {"id": 1, "day_of_week": "月曜日", "start_time": "09:00", "end_time": "10:00"},
-                    {"id": 2, "day_of_week": "月曜日", "start_time": "10:15", "end_time": "11:15"},
-                    {"id": 3, "day_of_week": "火曜日", "start_time": "09:00", "end_time": "10:00"},
-                    {"id": 4, "day_of_week": "火曜日", "start_time": "10:15", "end_time": "11:15"}
-                ],
-                "rooms": [
-                    {"id": 1, "name": "教室A"},
-                    {"id": 2, "name": "教室B"}
-                ],
-                "lessons": [
-                    {
-                        "id": 1,
-                        "subject": {"id": 1, "name": "数学"},
-                        "teacher": {"id": 1, "name": "田中先生"},
-                        "student_group": {"id": 1, "name": "1年A組"},
-                        "timeslot": {"id": 1, "day_of_week": "月曜日", "start_time": "09:00", "end_time": "10:00"},
-                        "room": {"id": 1, "name": "教室A"}
-                    },
-                    {
-                        "id": 2,
-                        "subject": {"id": 2, "name": "国語"},
-                        "teacher": {"id": 2, "name": "佐藤先生"},
-                        "student_group": {"id": 1, "name": "1年A組"},
-                        "timeslot": {"id": 2, "day_of_week": "月曜日", "start_time": "10:15", "end_time": "11:15"},
-                        "room": {"id": 1, "name": "教室A"}
-                    }
-                ],
-                "score": "Perfect (Railway Demo)"
-            })
+            # Railway環境では実用的軽量最適化を実行
+            print("🚂 Railway環境: 実用的軽量最適化実行")
+            return railway_optimization()
         
         # ローカル環境では本格最適化
         print("🖥️ ローカル環境: 本格最適化実行")
@@ -107,6 +77,118 @@ def optimize_timetable():
         import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
+def railway_optimization():
+    """Railway環境での実用的最適化（カスタマイズデータ反映）"""
+    try:
+        print("🔧 Railway最適化: カスタマイズデータ読み込み中...")
+        
+        # 実際のカスタマイズデータを取得
+        data_repo = get_data_repository()
+        subjects = data_repo.get_subjects()
+        teachers = data_repo.get_teachers()
+        timeslots = data_repo.get_timeslots()
+        student_groups = data_repo.get_student_groups()
+        
+        print(f"📊 読み込み完了: 科目{len(subjects)}件, 教師{len(teachers)}件, 時間帯{len(timeslots)}件")
+        
+        # Railway用軽量最適化設定
+        max_lessons = min(8, len(timeslots))  # 最大8コマに制限
+        selected_subjects = subjects[:3]  # 主要3科目に絞る
+        selected_timeslots = timeslots[:max_lessons]
+        
+        # 簡易ルールベース配置アルゴリズム
+        lessons = []
+        lesson_id = 1
+        
+        # 部屋は固定で2つ
+        rooms = [
+            {"id": 1, "name": "教室A"},
+            {"id": 2, "name": "教室B"}
+        ]
+        
+        # 各科目の授業を週時間数に応じて生成・配置
+        timeslot_index = 0
+        
+        for subject in selected_subjects:
+            subject_dict = subject.to_dict()
+            weekly_hours = min(subject_dict.get('weekly_hours', 2), 3)  # 最大3時間に制限
+            
+            # その科目を教えられる教師を見つける
+            suitable_teachers = [t for t in teachers 
+                               if subject_dict['name'] in t.to_dict().get('subjects', [])]
+            
+            if suitable_teachers and student_groups:
+                teacher = suitable_teachers[0]
+                student_group = student_groups[0]
+                
+                for hour in range(weekly_hours):
+                    if timeslot_index < len(selected_timeslots):
+                        timeslot = selected_timeslots[timeslot_index]
+                        room = rooms[timeslot_index % len(rooms)]
+                        
+                        lesson = {
+                            "id": lesson_id,
+                            "subject": {"id": subject.id, "name": subject.name},
+                            "teacher": {"id": teacher.id, "name": teacher.name},
+                            "student_group": {"id": student_group.id, "name": student_group.name},
+                            "timeslot": {
+                                "id": timeslot.id, 
+                                "day_of_week": timeslot.day_of_week,
+                                "start_time": timeslot.start_time.strftime("%H:%M"),
+                                "end_time": timeslot.end_time.strftime("%H:%M")
+                            },
+                            "room": room
+                        }
+                        
+                        lessons.append(lesson)
+                        lesson_id += 1
+                        timeslot_index += 1
+        
+        # タイムスロットをJSON形式で変換
+        timeslots_json = []
+        for ts in selected_timeslots:
+            timeslots_json.append({
+                "id": ts.id,
+                "day_of_week": ts.day_of_week,
+                "start_time": ts.start_time.strftime("%H:%M"),
+                "end_time": ts.end_time.strftime("%H:%M")
+            })
+        
+        result = {
+            "timeslots": timeslots_json,
+            "rooms": rooms,
+            "lessons": lessons,
+            "score": f"Railway最適化完了 ({len(lessons)}授業配置)"
+        }
+        
+        print(f"🎉 Railway最適化完了: {len(lessons)}授業を配置")
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"❌ Railway最適化エラー: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # フォールバック: 基本デモデータ
+        return jsonify({
+            "timeslots": [
+                {"id": 1, "day_of_week": "月曜日", "start_time": "09:00", "end_time": "10:00"},
+                {"id": 2, "day_of_week": "月曜日", "start_time": "10:15", "end_time": "11:15"}
+            ],
+            "rooms": [{"id": 1, "name": "教室A"}],
+            "lessons": [
+                {
+                    "id": 1,
+                    "subject": {"id": 1, "name": "数学"},
+                    "teacher": {"id": 1, "name": "田中先生"},
+                    "student_group": {"id": 1, "name": "1年A組"},
+                    "timeslot": {"id": 1, "day_of_week": "月曜日", "start_time": "09:00", "end_time": "10:00"},
+                    "room": {"id": 1, "name": "教室A"}
+                }
+            ],
+            "score": "Railway フォールバック"
+        })
 
 @api_bp.route('/refresh-cache', methods=['POST'])
 def refresh_cache():

@@ -168,6 +168,12 @@ function showTab(tabName) {
 // データ更新
 function refreshData() {
     console.log('🔄 データ更新中...');
+    
+    // カスタマイズキャッシュも更新
+    fetch('/api/refresh-cache', { method: 'POST' })
+        .then(() => console.log('✅ サーバーキャッシュ更新完了'))
+        .catch(err => console.warn('⚠️ キャッシュ更新失敗:', err));
+    
     loadSystemStatus();
     loadAllData();
 }
@@ -185,6 +191,17 @@ async function runOptimizationTest() {
     const statusDiv = createStatusDiv();
     
     try {
+        // データ更新を先に実行
+        statusDiv.innerHTML = `
+            <div class="alert alert-info">
+                📊 最新のカスタマイズデータを取得中...
+            </div>
+        `;
+        
+        // サーバーキャッシュ更新
+        await fetch('/api/refresh-cache', { method: 'POST' });
+        console.log('✅ カスタマイズデータ更新完了');
+        
         // 最適化状況確認
         statusDiv.innerHTML = `
             <div class="alert alert-info">
@@ -209,19 +226,36 @@ async function runOptimizationTest() {
         const demoResponse = await fetch('/api/demo-data');
         currentOptimizationData = await demoResponse.json();
         
-        // 最適化実行
-        statusDiv.innerHTML = `
-            <div class="alert alert-warning">
-                🚀 本格Timefold AI v6 最適化実行中...<br>
-                🔬 メタヒューリスティック・アルゴリズム実行中<br>
-                ⚖️ Hard制約充足 + Soft制約最適化<br>
-                🧠 タブーサーチ・シミュレーテッドアニーリング動作中<br>
-                📊 授業数: ${currentOptimizationData.lessons.length}件<br>
-                🕒 時間帯: ${currentOptimizationData.timeslots.length}コマ<br>
-                🏫 教室数: ${currentOptimizationData.rooms.length}室<br>
-                <div class="spinner-border spinner-border-sm mt-2" role="status"></div>
-            </div>
-        `;
+        // Railway環境を検出して表示メッセージを調整
+        const isRailway = window.location.hostname.includes('railway.app');
+        
+        if (isRailway) {
+            statusDiv.innerHTML = `
+                <div class="alert alert-warning">
+                    🚂 Railway環境でのカスタマイズ対応最適化実行中...<br>
+                    📊 最新のカスタマイズ設定を反映中<br>
+                    ⚙️ 時間設定・科目管理・教師管理データ使用<br>
+                    🎯 実用的ルールベース配置アルゴリズム実行<br>
+                    📊 授業数: ${currentOptimizationData.lessons.length}件<br>
+                    🕒 時間帯: ${currentOptimizationData.timeslots.length}コマ<br>
+                    🏫 教室数: ${currentOptimizationData.rooms.length}室<br>
+                    <div class="spinner-border spinner-border-sm mt-2" role="status"></div>
+                </div>
+            `;
+        } else {
+            statusDiv.innerHTML = `
+                <div class="alert alert-warning">
+                    🚀 本格Timefold AI v6 最適化実行中...<br>
+                    🔬 メタヒューリスティック・アルゴリズム実行中<br>
+                    ⚖️ Hard制約充足 + Soft制約最適化<br>
+                    🧠 タブーサーチ・シミュレーテッドアニーリング動作中<br>
+                    📊 授業数: ${currentOptimizationData.lessons.length}件<br>
+                    🕒 時間帯: ${currentOptimizationData.timeslots.length}コマ<br>
+                    🏫 教室数: ${currentOptimizationData.rooms.length}室<br>
+                    <div class="spinner-border spinner-border-sm mt-2" role="status"></div>
+                </div>
+            `;
+        }
         
         const optimizeResponse = await fetch('/api/optimize', {
             method: 'POST',
