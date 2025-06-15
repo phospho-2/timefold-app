@@ -110,12 +110,14 @@ def railway_optimization():
         
         print(f"📊 読み込み完了: 科目{len(subjects)}件, 教師{len(teachers)}件, 時間帯{len(timeslots)}件")
         
-        # Railway用最適化設定（もっと多めに）
-        max_lessons = min(12, len(timeslots))  # 最大12コマに増加
-        selected_subjects = subjects[:min(4, len(subjects))]  # 最大4科目に増加
+        # Railway用最適化設定（実際の週時間数を考慮）
+        max_lessons = min(16, len(timeslots))  # 最大16コマに増加
+        selected_subjects = subjects  # 全科目を使用
         selected_timeslots = timeslots[:max_lessons]
         
-        print(f"🎯 最適化設定: {len(selected_subjects)}科目, {len(selected_timeslots)}時間帯使用")
+        # 実際の週時間数の合計を計算
+        total_weekly_hours = sum(subj.to_dict().get('weekly_hours', 0) for subj in selected_subjects)
+        print(f"🎯 最適化設定: {len(selected_subjects)}科目, 週{total_weekly_hours}時間, {len(selected_timeslots)}時間帯使用")
         
         # 簡易ルールベース配置アルゴリズム
         lessons = []
@@ -132,16 +134,20 @@ def railway_optimization():
         
         for subject in selected_subjects:
             subject_dict = subject.to_dict()
-            weekly_hours = min(subject_dict.get('weekly_hours', 2), 4)  # 最大4時間に増加
+            weekly_hours = subject_dict.get('weekly_hours', 2)  # 制限を撤廃、実際の値を使用
             subject_name = subject_dict.get('name', f'科目{subject.id}')
             
-            print(f"📝 科目'{subject_name}'の授業配置開始 (週{weekly_hours}時間)")
+            print(f"📝 科目'{subject_name}'の授業配置開始 (設定値: 週{weekly_hours}時間)")
             
             # その科目を教えられる教師を見つける
             suitable_teachers = [t for t in teachers 
                                if subject_name in t.to_dict().get('subjects', [])]
             
-            print(f"  適任教師: {len(suitable_teachers)}人")
+            print(f"  適任教師候補: {len(suitable_teachers)}人")
+            if suitable_teachers:
+                for teacher in suitable_teachers[:1]:  # 最初の適任教師
+                    teacher_dict = teacher.to_dict()
+                    print(f"    選択教師: {teacher_dict.get('name', 'N/A')} - 担当科目: {teacher_dict.get('subjects', [])}")
             
             if suitable_teachers and student_groups:
                 teacher = suitable_teachers[0]
@@ -149,6 +155,7 @@ def railway_optimization():
                 teacher_name = teacher.to_dict().get('name', f'教師{teacher.id}')
                 group_name = student_group.to_dict().get('name', f'グループ{student_group.id}')
                 
+                assigned_hours = 0
                 for hour in range(weekly_hours):
                     if timeslot_index < len(selected_timeslots):
                         timeslot = selected_timeslots[timeslot_index]
@@ -169,13 +176,17 @@ def railway_optimization():
                         }
                         
                         lessons.append(lesson)
-                        print(f"    授業{hour+1}: {timeslot.day_of_week} {timeslot.start_time.strftime('%H:%M')}-{timeslot.end_time.strftime('%H:%M')}")
+                        assigned_hours += 1
+                        print(f"    ✅ 授業{hour+1}: {timeslot.day_of_week} {timeslot.start_time.strftime('%H:%M')}-{timeslot.end_time.strftime('%H:%M')}")
                         lesson_id += 1
                         timeslot_index += 1
                     else:
                         print(f"    ⚠️ 時間帯不足により授業{hour+1}をスキップ")
+                        break
+                
+                print(f"  📊 科目'{subject_name}': {assigned_hours}/{weekly_hours}時間配置完了")
             else:
-                print(f"  ⚠️ 適任教師または学生グループが見つからないため'{subject_name}'をスキップ")
+                print(f"  ❌ 適任教師または学生グループが見つからないため'{subject_name}'をスキップ")
         
         # タイムスロットをJSON形式で変換
         timeslots_json = []
