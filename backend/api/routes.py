@@ -48,9 +48,9 @@ def optimize_timetable():
     try:
         print("🎯 最適化リクエスト受信")
         
-        # Railway環境検出（複数の環境変数を確認）
-        railway_indicators = ['RAILWAY_ENVIRONMENT', 'RAILWAY_PROJECT_ID', 'RAILWAY_SERVICE_ID', 'RAILWAY_PROJECT_NAME']
-        is_railway = any(var in os.environ for var in railway_indicators) or 'railway.app' in os.environ.get('RAILWAY_PUBLIC_DOMAIN', '')
+        # Railway環境検出（シンプル化）
+        # Railway ではPORTが環境変数で設定され、通常ローカル開発では設定されない
+        is_railway = 'PORT' in os.environ and 'HOME' in os.environ and '/app' in os.environ.get('HOME', '')
         
         if is_railway:
             # Railway環境では実用的軽量最適化を実行
@@ -406,14 +406,14 @@ def test_api():
     
     # Railway環境変数の確認
     try:
-        railway_vars = {k: v for k, v in os.environ.items() if 'RAILWAY' in k.upper()}
-        railway_indicators = ['RAILWAY_ENVIRONMENT', 'RAILWAY_PROJECT_ID', 'RAILWAY_SERVICE_ID', 'RAILWAY_PROJECT_NAME']
-        is_railway_detected = any(var in os.environ for var in railway_indicators) or 'railway.app' in os.environ.get('RAILWAY_PUBLIC_DOMAIN', '')
+        port_var = os.environ.get('PORT', 'not_set')
+        home_var = os.environ.get('HOME', 'not_set')
+        is_railway_detected = 'PORT' in os.environ and 'HOME' in os.environ and '/app' in os.environ.get('HOME', '')
         
         environment_info = {
-            "railway_vars": railway_vars,
-            "is_railway_detected": is_railway_detected,
-            "checked_vars": railway_indicators
+            "port": port_var,
+            "home": home_var,
+            "is_railway_detected": is_railway_detected
         }
     except Exception as env_error:
         environment_info = {"error": str(env_error)}
