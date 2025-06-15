@@ -132,64 +132,73 @@ def railway_optimization():
         # 各科目の授業を週時間数に応じて生成・配置
         timeslot_index = 0
         
-        for subject in selected_subjects:
-            subject_dict = subject.to_dict()
-            weekly_hours = subject_dict.get('weekly_hours', 2)  # 制限を撤廃、実際の値を使用
-            subject_name = subject_dict.get('name', f'科目{subject.id}')
+        print(f"🎯 授業配置開始: {len(selected_subjects)}科目, {len(selected_timeslots)}時間帯, {len(student_groups)}学生グループ")
+        
+        try:
+            for subject in selected_subjects:
+                subject_dict = subject.to_dict()
+                weekly_hours = subject_dict.get('weekly_hours', 2)  # 制限を撤廃、実際の値を使用
+                subject_name = subject_dict.get('name', f'科目{subject.id}')
             
-            print(f"📝 科目'{subject_name}'の授業配置開始 (設定値: 週{weekly_hours}時間)")
-            
-            # その科目を教えられる教師を見つける
-            suitable_teachers = [t for t in teachers 
-                               if subject_name in t.to_dict().get('subjects', [])]
-            
-            print(f"  適任教師候補: {len(suitable_teachers)}人")
-            if suitable_teachers:
-                for teacher in suitable_teachers[:1]:  # 最初の適任教師
-                    teacher_dict = teacher.to_dict()
-                    print(f"    選択教師: {teacher_dict.get('name', 'N/A')} - 担当科目: {teacher_dict.get('subjects', [])}")
-            else:
-                print(f"  ⚠️ 科目'{subject_name}'に適任教師が見つかりません")
-                print(f"    利用可能な教師: {[t.to_dict().get('name') + ':' + str(t.to_dict().get('subjects', [])) for t in teachers[:3]]}")
-            
-            if suitable_teachers and student_groups:
-                teacher = suitable_teachers[0]
-                student_group = student_groups[0]
-                teacher_name = teacher.to_dict().get('name', f'教師{teacher.id}')
-                group_name = student_group.to_dict().get('name', f'グループ{student_group.id}')
+                print(f"📝 科目'{subject_name}'の授業配置開始 (設定値: 週{weekly_hours}時間)")
                 
-                assigned_hours = 0
-                for hour in range(weekly_hours):
-                    if timeslot_index < len(selected_timeslots):
-                        timeslot = selected_timeslots[timeslot_index]
-                        room = rooms[timeslot_index % len(rooms)]
-                        
-                        lesson = {
-                            "id": lesson_id,
-                            "subject": {"id": subject.id, "name": subject_name},
-                            "teacher": {"id": teacher.id, "name": teacher_name},
-                            "student_group": {"id": student_group.id, "name": group_name},
-                            "timeslot": {
-                                "id": timeslot.id, 
-                                "day_of_week": timeslot.day_of_week,
-                                "start_time": timeslot.start_time.strftime("%H:%M"),
-                                "end_time": timeslot.end_time.strftime("%H:%M")
-                            },
-                            "room": room
-                        }
-                        
-                        lessons.append(lesson)
-                        assigned_hours += 1
-                        print(f"    ✅ 授業{hour+1}: {timeslot.day_of_week} {timeslot.start_time.strftime('%H:%M')}-{timeslot.end_time.strftime('%H:%M')}")
-                        lesson_id += 1
-                        timeslot_index += 1
-                    else:
-                        print(f"    ⚠️ 時間帯不足により授業{hour+1}をスキップ")
-                        break
+                # その科目を教えられる教師を見つける
+                suitable_teachers = [t for t in teachers 
+                                   if subject_name in t.to_dict().get('subjects', [])]
                 
-                print(f"  📊 科目'{subject_name}': {assigned_hours}/{weekly_hours}時間配置完了")
-            else:
-                print(f"  ❌ 適任教師または学生グループが見つからないため'{subject_name}'をスキップ")
+                print(f"  適任教師候補: {len(suitable_teachers)}人")
+                if suitable_teachers:
+                    for teacher in suitable_teachers[:1]:  # 最初の適任教師
+                        teacher_dict = teacher.to_dict()
+                        print(f"    選択教師: {teacher_dict.get('name', 'N/A')} - 担当科目: {teacher_dict.get('subjects', [])}")
+                else:
+                    print(f"  ⚠️ 科目'{subject_name}'に適任教師が見つかりません")
+                    print(f"    利用可能な教師: {[t.to_dict().get('name') + ':' + str(t.to_dict().get('subjects', [])) for t in teachers[:3]]}")
+                
+                if suitable_teachers and student_groups:
+                    teacher = suitable_teachers[0]
+                    student_group = student_groups[0]
+                    teacher_name = teacher.to_dict().get('name', f'教師{teacher.id}')
+                    group_name = student_group.to_dict().get('name', f'グループ{student_group.id}')
+                    
+                    assigned_hours = 0
+                    for hour in range(weekly_hours):
+                        if timeslot_index < len(selected_timeslots):
+                            timeslot = selected_timeslots[timeslot_index]
+                            room = rooms[timeslot_index % len(rooms)]
+                            
+                            lesson = {
+                                "id": lesson_id,
+                                "subject": {"id": subject.id, "name": subject_name},
+                                "teacher": {"id": teacher.id, "name": teacher_name},
+                                "student_group": {"id": student_group.id, "name": group_name},
+                                "timeslot": {
+                                    "id": timeslot.id, 
+                                    "day_of_week": timeslot.day_of_week,
+                                    "start_time": timeslot.start_time.strftime("%H:%M"),
+                                    "end_time": timeslot.end_time.strftime("%H:%M")
+                                },
+                                "room": room
+                            }
+                            
+                            lessons.append(lesson)
+                            assigned_hours += 1
+                            print(f"    ✅ 授業{hour+1}: {timeslot.day_of_week} {timeslot.start_time.strftime('%H:%M')}-{timeslot.end_time.strftime('%H:%M')}")
+                            lesson_id += 1
+                            timeslot_index += 1
+                        else:
+                            print(f"    ⚠️ 時間帯不足により授業{hour+1}をスキップ")
+                            break
+                    
+                    print(f"  📊 科目'{subject_name}': {assigned_hours}/{weekly_hours}時間配置完了")
+                else:
+                    print(f"  ❌ 適任教師または学生グループが見つからないため'{subject_name}'をスキップ")
+        
+        except Exception as loop_error:
+            print(f"❌ 授業配置ループでエラー: {loop_error}")
+            import traceback
+            traceback.print_exc()
+            raise loop_error
         
         # タイムスロットをJSON形式で変換
         timeslots_json = []
