@@ -229,10 +229,18 @@ async function runOptimizationTest() {
             body: JSON.stringify(currentOptimizationData)
         });
         
+        if (!optimizeResponse.ok) {
+            throw new Error(`HTTP ${optimizeResponse.status}: ${optimizeResponse.statusText}`);
+        }
+        
         const result = await optimizeResponse.json();
         
         if (result.error) {
             throw new Error(result.error);
+        }
+        
+        if (!result.lessons || !Array.isArray(result.lessons)) {
+            throw new Error('最適化結果のレッスンデータが無効です');
         }
         
         // 最適化成功
@@ -312,9 +320,14 @@ function displayOptimizationResult(data) {
         }
     }
     
-    const timeslots = data.timeslots;
-    const rooms = data.rooms;
-    const lessons = data.lessons;
+    const timeslots = data.timeslots || [];
+    const rooms = data.rooms || [];
+    const lessons = data.lessons || [];
+    
+    if (timeslots.length === 0 || rooms.length === 0) {
+        timetableDiv.innerHTML = '<div class="alert alert-warning">最適化データが不完全です</div>';
+        return;
+    }
     
     let html = '<div class="mt-4">';
     html += '<h3>📅 本格AI最適化時間割</h3>';
