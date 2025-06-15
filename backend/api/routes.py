@@ -402,6 +402,10 @@ def manage_lessons():
 def test_api():
     """API動作テスト"""
     data_repo = get_data_repository()
+    
+    # Railway環境変数の確認
+    railway_vars = {k: v for k, v in os.environ.items() if 'RAILWAY' in k.upper()}
+    
     return jsonify({
         "status": "success",
         "message": "TimefoldAI API is working!",
@@ -410,5 +414,9 @@ def test_api():
             "teachers": len(data_repo.get_teachers()),
             "timeslots": len(data_repo.get_timeslots()),
             "student_groups": len(data_repo.get_student_groups())
+        },
+        "environment": {
+            "railway_vars": railway_vars,
+            "is_railway_detected": 'RAILWAY_ENVIRONMENT' in os.environ or 'RAILWAY_PROJECT_ID' in os.environ
         }
     })
