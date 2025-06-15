@@ -1,42 +1,51 @@
+"""TimefoldAI Flask アプリケーション"""
 from flask import Flask, render_template
 from flask_cors import CORS
-import logging
+from .api.routes import api_bp
+from .api.customize_routes import customize_bp
 
-def create_app():
+def create_app(config=None):
+    """Flask アプリケーションファクトリ"""
     app = Flask(__name__, 
                 static_folder='../frontend/static',
                 template_folder='../frontend/templates')
     
-    # CORS設定
+    # CORS設定（開発用）
     CORS(app)
     
-    # ログ設定
-    logging.basicConfig(level=logging.INFO)
+    # 設定
+    if config:
+        app.config.update(config)
+    else:
+        app.config.update({
+            'DEBUG': True,
+            'HOST': 'localhost',
+            'PORT': 8000
+        })
     
     # Blueprint登録
-    try:
-        from backend.api.routes import api_bp
-        app.register_blueprint(api_bp, url_prefix='/api')
-        app.logger.info("✅ API Blueprint 登録成功")
-    except Exception as e:
-        app.logger.error(f"❌ API Blueprint 登録失敗: {e}")
-        import traceback
-        traceback.print_exc()
+    app.register_blueprint(api_bp)
+    app.register_blueprint(customize_bp)  # カスタマイズAPI追加
     
-    # メインページルート
     @app.route('/')
     def index():
+        """メインページ"""
         return render_template('index.html')
     
-    # ヘルスチェック用の追加ルート（念のため）
-    @app.route('/health')
-    def health():
-        return {"status": "ok", "message": "App is running"}
+    @app.errorhandler(404)
+    def not_found(error):
+        return {"error": "Not Found"}, 404
     
-    # 登録されたルートを確認（デバッグ用）
-    @app.before_first_request
-    def log_routes():
-        for rule in app.url_map.iter_rules():
-            app.logger.info(f"📍 登録ルート: {rule.endpoint} -> {rule.rule}")
+    @app.errorhandler(500)
+    def internal_error(error):
+        return {"error": "Internal Server Error"}, 500
     
     return app
+
+if __name__ == '__main__':
+    app = create_app()
+    app.run(
+        host=app.config['HOST'],
+        port=app.config['PORT'],
+        debug=app.config['DEBUG']
+    )

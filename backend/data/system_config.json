@@ -1,6 +1,6 @@
 {
-  "start_hour": 7,
-  "end_hour": 18,
+  "start_hour": 9,
+  "end_hour": 15,
   "lesson_duration": 60,
   "break_duration": 15,
   "lunch_break_start": "12:00",
