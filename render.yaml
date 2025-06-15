@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: timefold-app
+    env: python
+    plan: free
+    buildCommand: |
+      python -m pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: python run.py
+    envVars:
+      - key: PYTHONPATH
+        value: .
+      - key: RENDER_ENVIRONMENT
+        value: "true"
+    healthCheckPath: /api/test
+    regions:
+      - oregon

@@ -9,11 +9,11 @@ def main():
     """メイン実行関数"""
     print("🚀 TimefoldAI 分離版アプリケーション起動中...")
     
-    # Railway環境判定
-    is_railway = os.environ.get('RAILWAY_ENVIRONMENT') is not None
+    # クラウド環境判定（Railway/Render対応）
+    is_cloud = os.environ.get('RAILWAY_ENVIRONMENT') is not None or os.environ.get('RENDER_ENVIRONMENT') is not None
     port = int(os.environ.get('PORT', 8000))
-    host = '0.0.0.0' if is_railway else 'localhost'
-    debug = not is_railway
+    host = '0.0.0.0' if is_cloud else 'localhost'
+    debug = not is_cloud
     
     # アプリケーション作成
     app = create_app({
@@ -22,8 +22,8 @@ def main():
         'PORT': port
     })
     
-    if is_railway:
-        print("🚂 Railway環境で起動中...")
+    if is_cloud:
+        print("☁️ クラウド環境で起動中...")
         print(f"📍 ポート: {port}")
         print(f"🧪 ヘルスチェック: /api/test")
     else:
