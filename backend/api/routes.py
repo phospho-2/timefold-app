@@ -48,8 +48,9 @@ def optimize_timetable():
     try:
         print("🎯 最適化リクエスト受信")
         
-        # Railway環境検出
-        is_railway = 'RAILWAY_ENVIRONMENT' in os.environ or 'RAILWAY_PROJECT_ID' in os.environ
+        # Railway環境検出（複数の環境変数を確認）
+        railway_indicators = ['RAILWAY_ENVIRONMENT', 'RAILWAY_PROJECT_ID', 'RAILWAY_SERVICE_ID', 'RAILWAY_PROJECT_NAME']
+        is_railway = any(var in os.environ for var in railway_indicators) or 'railway.app' in os.environ.get('RAILWAY_PUBLIC_DOMAIN', '')
         
         if is_railway:
             # Railway環境では実用的軽量最適化を実行
@@ -404,7 +405,18 @@ def test_api():
     data_repo = get_data_repository()
     
     # Railway環境変数の確認
-    railway_vars = {k: v for k, v in os.environ.items() if 'RAILWAY' in k.upper()}
+    try:
+        railway_vars = {k: v for k, v in os.environ.items() if 'RAILWAY' in k.upper()}
+        railway_indicators = ['RAILWAY_ENVIRONMENT', 'RAILWAY_PROJECT_ID', 'RAILWAY_SERVICE_ID', 'RAILWAY_PROJECT_NAME']
+        is_railway_detected = any(var in os.environ for var in railway_indicators) or 'railway.app' in os.environ.get('RAILWAY_PUBLIC_DOMAIN', '')
+        
+        environment_info = {
+            "railway_vars": railway_vars,
+            "is_railway_detected": is_railway_detected,
+            "checked_vars": railway_indicators
+        }
+    except Exception as env_error:
+        environment_info = {"error": str(env_error)}
     
     return jsonify({
         "status": "success",
@@ -415,8 +427,5 @@ def test_api():
             "timeslots": len(data_repo.get_timeslots()),
             "student_groups": len(data_repo.get_student_groups())
         },
-        "environment": {
-            "railway_vars": railway_vars,
-            "is_railway_detected": 'RAILWAY_ENVIRONMENT' in os.environ or 'RAILWAY_PROJECT_ID' in os.environ
-        }
+        "environment": environment_info
     })
