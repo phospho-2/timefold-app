@@ -24,11 +24,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # アプリケーションファイルのコピー
 COPY . .
 
-# Railway用の環境変数
+# クラウド用の環境変数（Railway/Cloud Run対応）
 ENV RAILWAY_ENVIRONMENT=true
+ENV CLOUD_RUN_ENVIRONMENT=true
 
-# ポートの公開
+# ポートの公開（Cloud Runは8080、Railwayは8000）
 EXPOSE 8000
+EXPOSE 8080
 
 # アプリケーションの起動
 CMD ["python", "run.py"]

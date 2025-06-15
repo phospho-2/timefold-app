@@ -9,8 +9,10 @@ def main():
     """メイン実行関数"""
     print("🚀 TimefoldAI 分離版アプリケーション起動中...")
     
-    # クラウド環境判定（Railway/Render対応）
-    is_cloud = os.environ.get('RAILWAY_ENVIRONMENT') is not None or os.environ.get('RENDER_ENVIRONMENT') is not None
+    # クラウド環境判定（Railway/Render/Cloud Run対応）
+    is_cloud = (os.environ.get('RAILWAY_ENVIRONMENT') is not None or 
+                os.environ.get('RENDER_ENVIRONMENT') is not None or
+                os.environ.get('CLOUD_RUN_ENVIRONMENT') is not None)
     port = int(os.environ.get('PORT', 8000))
     host = '0.0.0.0' if is_cloud else 'localhost'
     debug = not is_cloud

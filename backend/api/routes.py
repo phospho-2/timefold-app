@@ -48,9 +48,10 @@ def optimize_timetable():
     try:
         print("🎯 最適化リクエスト受信")
         
-        # クラウド環境検出（Railway/Render対応）
+        # クラウド環境検出（Railway/Render/Cloud Run対応）
         is_cloud = ('PORT' in os.environ and 'HOME' in os.environ and '/app' in os.environ.get('HOME', '')) or \
-                   'RENDER_ENVIRONMENT' in os.environ or 'RAILWAY_ENVIRONMENT' in os.environ
+                   'RENDER_ENVIRONMENT' in os.environ or 'RAILWAY_ENVIRONMENT' in os.environ or \
+                   'CLOUD_RUN_ENVIRONMENT' in os.environ
         
         if is_cloud:
             # クラウド環境では軽量最適化を実行
