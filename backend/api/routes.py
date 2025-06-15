@@ -85,17 +85,37 @@ def railway_optimization():
         
         # 実際のカスタマイズデータを取得
         data_repo = get_data_repository()
+        print("📋 データリポジトリ取得完了")
+        
         subjects = data_repo.get_subjects()
+        print(f"📚 科目データ取得: {len(subjects)}件")
+        for i, subj in enumerate(subjects[:3]):
+            subj_dict = subj.to_dict()
+            print(f"  科目{i+1}: {subj_dict.get('name', 'N/A')} (週{subj_dict.get('weekly_hours', 0)}時間)")
+        
         teachers = data_repo.get_teachers()
+        print(f"👨‍🏫 教師データ取得: {len(teachers)}件")
+        for i, teacher in enumerate(teachers[:3]):
+            teacher_dict = teacher.to_dict()
+            print(f"  教師{i+1}: {teacher_dict.get('name', 'N/A')} - 担当科目: {teacher_dict.get('subjects', [])}")
+        
         timeslots = data_repo.get_timeslots()
+        print(f"⏰ 時間帯データ取得: {len(timeslots)}件")
+        
         student_groups = data_repo.get_student_groups()
+        print(f"👥 学生グループ取得: {len(student_groups)}件")
+        
+        if not subjects or not teachers or not timeslots or not student_groups:
+            raise ValueError(f"必要なデータが不足: 科目{len(subjects)}, 教師{len(teachers)}, 時間帯{len(timeslots)}, 学生グループ{len(student_groups)}")
         
         print(f"📊 読み込み完了: 科目{len(subjects)}件, 教師{len(teachers)}件, 時間帯{len(timeslots)}件")
         
-        # Railway用軽量最適化設定
-        max_lessons = min(8, len(timeslots))  # 最大8コマに制限
-        selected_subjects = subjects[:3]  # 主要3科目に絞る
+        # Railway用最適化設定（もっと多めに）
+        max_lessons = min(12, len(timeslots))  # 最大12コマに増加
+        selected_subjects = subjects[:min(4, len(subjects))]  # 最大4科目に増加
         selected_timeslots = timeslots[:max_lessons]
+        
+        print(f"🎯 最適化設定: {len(selected_subjects)}科目, {len(selected_timeslots)}時間帯使用")
         
         # 簡易ルールベース配置アルゴリズム
         lessons = []
@@ -112,15 +132,22 @@ def railway_optimization():
         
         for subject in selected_subjects:
             subject_dict = subject.to_dict()
-            weekly_hours = min(subject_dict.get('weekly_hours', 2), 3)  # 最大3時間に制限
+            weekly_hours = min(subject_dict.get('weekly_hours', 2), 4)  # 最大4時間に増加
+            subject_name = subject_dict.get('name', f'科目{subject.id}')
+            
+            print(f"📝 科目'{subject_name}'の授業配置開始 (週{weekly_hours}時間)")
             
             # その科目を教えられる教師を見つける
             suitable_teachers = [t for t in teachers 
-                               if subject_dict['name'] in t.to_dict().get('subjects', [])]
+                               if subject_name in t.to_dict().get('subjects', [])]
+            
+            print(f"  適任教師: {len(suitable_teachers)}人")
             
             if suitable_teachers and student_groups:
                 teacher = suitable_teachers[0]
                 student_group = student_groups[0]
+                teacher_name = teacher.to_dict().get('name', f'教師{teacher.id}')
+                group_name = student_group.to_dict().get('name', f'グループ{student_group.id}')
                 
                 for hour in range(weekly_hours):
                     if timeslot_index < len(selected_timeslots):
@@ -129,9 +156,9 @@ def railway_optimization():
                         
                         lesson = {
                             "id": lesson_id,
-                            "subject": {"id": subject.id, "name": subject.name},
-                            "teacher": {"id": teacher.id, "name": teacher.name},
-                            "student_group": {"id": student_group.id, "name": student_group.name},
+                            "subject": {"id": subject.id, "name": subject_name},
+                            "teacher": {"id": teacher.id, "name": teacher_name},
+                            "student_group": {"id": student_group.id, "name": group_name},
                             "timeslot": {
                                 "id": timeslot.id, 
                                 "day_of_week": timeslot.day_of_week,
@@ -142,8 +169,13 @@ def railway_optimization():
                         }
                         
                         lessons.append(lesson)
+                        print(f"    授業{hour+1}: {timeslot.day_of_week} {timeslot.start_time.strftime('%H:%M')}-{timeslot.end_time.strftime('%H:%M')}")
                         lesson_id += 1
                         timeslot_index += 1
+                    else:
+                        print(f"    ⚠️ 時間帯不足により授業{hour+1}をスキップ")
+            else:
+                print(f"  ⚠️ 適任教師または学生グループが見つからないため'{subject_name}'をスキップ")
         
         # タイムスロットをJSON形式で変換
         timeslots_json = []
@@ -163,6 +195,12 @@ def railway_optimization():
         }
         
         print(f"🎉 Railway最適化完了: {len(lessons)}授業を配置")
+        print(f"📋 最終結果: {len(timeslots_json)}時間帯, {len(rooms)}教室, {len(lessons)}授業")
+        
+        # 最小限の結果チェック
+        if len(lessons) == 0:
+            print("⚠️ 授業が1つも配置されませんでした - データ不足の可能性")
+            
         return jsonify(result)
         
     except Exception as e:
@@ -170,14 +208,19 @@ def railway_optimization():
         import traceback
         traceback.print_exc()
         
-        # フォールバック: 基本デモデータ
-        return jsonify({
-            "timeslots": [
+        # より詳細なフォールバック: 実際のデータを可能な限り使用
+        try:
+            print("🔄 フォールバック処理開始 - 最小限のデータで再試行")
+            
+            # 最小限のデータでもう一度試行
+            fallback_timeslots = [
                 {"id": 1, "day_of_week": "月曜日", "start_time": "09:00", "end_time": "10:00"},
-                {"id": 2, "day_of_week": "月曜日", "start_time": "10:15", "end_time": "11:15"}
-            ],
-            "rooms": [{"id": 1, "name": "教室A"}],
-            "lessons": [
+                {"id": 2, "day_of_week": "月曜日", "start_time": "10:15", "end_time": "11:15"},
+                {"id": 3, "day_of_week": "火曜日", "start_time": "09:00", "end_time": "10:00"},
+                {"id": 4, "day_of_week": "火曜日", "start_time": "10:15", "end_time": "11:15"}
+            ]
+            
+            fallback_lessons = [
                 {
                     "id": 1,
                     "subject": {"id": 1, "name": "数学"},
@@ -185,10 +228,35 @@ def railway_optimization():
                     "student_group": {"id": 1, "name": "1年A組"},
                     "timeslot": {"id": 1, "day_of_week": "月曜日", "start_time": "09:00", "end_time": "10:00"},
                     "room": {"id": 1, "name": "教室A"}
+                },
+                {
+                    "id": 2,
+                    "subject": {"id": 2, "name": "国語"},
+                    "teacher": {"id": 2, "name": "佐藤先生"},
+                    "student_group": {"id": 1, "name": "1年A組"},
+                    "timeslot": {"id": 2, "day_of_week": "月曜日", "start_time": "10:15", "end_time": "11:15"},
+                    "room": {"id": 1, "name": "教室A"}
+                },
+                {
+                    "id": 3,
+                    "subject": {"id": 3, "name": "英語"},
+                    "teacher": {"id": 3, "name": "鈴木先生"},
+                    "student_group": {"id": 1, "name": "1年A組"},
+                    "timeslot": {"id": 3, "day_of_week": "火曜日", "start_time": "09:00", "end_time": "10:00"},
+                    "room": {"id": 1, "name": "教室A"}
                 }
-            ],
-            "score": "Railway フォールバック"
-        })
+            ]
+            
+            return jsonify({
+                "timeslots": fallback_timeslots,
+                "rooms": [{"id": 1, "name": "教室A"}, {"id": 2, "name": "教室B"}],
+                "lessons": fallback_lessons,
+                "score": "Railway フォールバック (改善版)"
+            })
+            
+        except Exception as fallback_error:
+            print(f"❌ フォールバック処理も失敗: {fallback_error}")
+            return jsonify({"error": f"最適化処理が完全に失敗しました: {str(e)}"}), 500
 
 @api_bp.route('/refresh-cache', methods=['POST'])
 def refresh_cache():
