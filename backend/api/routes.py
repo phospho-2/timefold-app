@@ -44,22 +44,25 @@ def get_demo_data():
 
 @api_bp.route('/optimize', methods=['POST'])
 def optimize_timetable():
-    """🎯 Railway対応 実用的最適化エンドポイント"""
+    """🎯 環境対応 最適化エンドポイント（Cloud Run: 本格最適化、Railway/Render: 軽量最適化）"""
     try:
         print("🎯 最適化リクエスト受信")
         
-        # クラウド環境検出（Railway/Render/Cloud Run対応）
-        is_cloud = ('PORT' in os.environ and 'HOME' in os.environ and '/app' in os.environ.get('HOME', '')) or \
-                   'RENDER_ENVIRONMENT' in os.environ or 'RAILWAY_ENVIRONMENT' in os.environ or \
-                   'CLOUD_RUN_ENVIRONMENT' in os.environ
+        # 軽量最適化が必要な環境検出（Railway/Renderのみ）
+        is_lightweight_env = 'RENDER_ENVIRONMENT' in os.environ or 'RAILWAY_ENVIRONMENT' in os.environ
         
-        if is_cloud:
-            # クラウド環境では軽量最適化を実行
-            print("☁️ クラウド環境: 軽量最適化実行")
+        # Cloud Runは十分なメモリがあるので本格最適化を実行
+        if is_lightweight_env:
+            # メモリ制限が厳しい環境では軽量最適化を実行
+            print("⚡ 軽量環境: 軽量最適化実行")
             return railway_optimization()
         
-        # ローカル環境では本格最適化
-        print("🖥️ ローカル環境: 本格最適化実行")
+        # Cloud Runおよびローカル環境では本格最適化
+        if 'CLOUD_RUN_ENVIRONMENT' in os.environ:
+            print("☁️ Cloud Run環境: 本格TimefoldAI最適化実行")
+        else:
+            print("🖥️ ローカル環境: 本格TimefoldAI最適化実行")
+        
         fresh_optimization_service = OptimizationService()
         
         data = request.get_json()
