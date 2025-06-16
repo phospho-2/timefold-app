@@ -32,6 +32,15 @@ steps:
       '--max-instances', '10',
       '--set-env-vars', 'CLOUD_RUN_ENVIRONMENT=true'
     ]
+  
+  # 確実に未認証アクセスを許可
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: [
+      'run', 'services', 'add-iam-policy-binding', 'timefold-app',
+      '--member=allUsers',
+      '--role=roles/run.invoker',
+      '--region=us-central1'
+    ]
 
 images:
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/timefold-repo/timefold-app'
