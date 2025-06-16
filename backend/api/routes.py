@@ -44,24 +44,21 @@ def get_demo_data():
 
 @api_bp.route('/optimize', methods=['POST'])
 def optimize_timetable():
-    """🎯 環境対応 最適化エンドポイント（Cloud Run: 本格最適化、Railway/Render: 軽量最適化）"""
+    """🎯 全環境で本格TimefoldAI最適化実行"""
     try:
         print("🎯 最適化リクエスト受信")
         
-        # 軽量最適化が必要な環境検出（Railway/Renderのみ）
-        is_lightweight_env = 'RENDER_ENVIRONMENT' in os.environ or 'RAILWAY_ENVIRONMENT' in os.environ
-        
-        # Cloud Runは十分なメモリがあるので本格最適化を実行
-        if is_lightweight_env:
-            # メモリ制限が厳しい環境では軽量最適化を実行
-            print("⚡ 軽量環境: 軽量最適化実行")
-            return railway_optimization()
-        
-        # Cloud Runおよびローカル環境では本格最適化
+        # 環境確認（デバッグ用）
         if 'CLOUD_RUN_ENVIRONMENT' in os.environ:
             print("☁️ Cloud Run環境: 本格TimefoldAI最適化実行")
+        elif 'RENDER_ENVIRONMENT' in os.environ:
+            print("🎨 Render環境: 本格TimefoldAI最適化実行")
+        elif 'RAILWAY_ENVIRONMENT' in os.environ:
+            print("🚂 Railway環境: 本格TimefoldAI最適化実行")
         else:
             print("🖥️ ローカル環境: 本格TimefoldAI最適化実行")
+        
+        # 全環境で本格TimefoldAI最適化を実行（Cloud Runは2GB、十分なメモリあり）
         
         fresh_optimization_service = OptimizationService()
         
